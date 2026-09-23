@@ -27,6 +27,9 @@ export default function Home() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [video, setVideo] = useState<Video | null>(null);
   const [second, setSecond] = useState(0);
+  const [playing, setPlaying] = useState(false);
+  const [muted, setMuted] = useState(false);
+  const [fullscreen, setFullscreen] = useState(false);
   const [timestamped, setTimestamped] = useState(true);
   const [comment, setComment] = useState("");
   const [prompt, setPrompt] = useState("");
@@ -35,6 +38,7 @@ export default function Home() {
   const [confirmRemoveId, setConfirmRemoveId] = useState<string | null>(null);
   const [error, setError] = useState("");
   const player = useRef<HTMLVideoElement>(null);
+  const playerShell = useRef<HTMLDivElement>(null);
   const conversation = useRef<HTMLDivElement>(null);
 
   const refreshList = useCallback(async () => {
@@ -56,6 +60,7 @@ export default function Home() {
     if (!selectedId) { setVideo(null); return; }
     setVideo(null);
     setSecond(0);
+    setPlaying(false);
     refreshVideo(selectedId).catch((err) => setError(err.message));
     const timer = window.setInterval(() => {
       refreshVideo(selectedId).catch(() => {});
@@ -66,9 +71,26 @@ export default function Home() {
 
   useEffect(() => { if (conversation.current) conversation.current.scrollTop = conversation.current.scrollHeight; }, [video?.turns.length]);
 
+  useEffect(() => {
+    const syncFullscreen = () => setFullscreen(document.fullscreenElement === playerShell.current);
+    document.addEventListener("fullscreenchange", syncFullscreen);
+    return () => document.removeEventListener("fullscreenchange", syncFullscreen);
+  }, []);
+
   function seek(value: number) {
     setSecond(value);
     if (player.current) player.current.currentTime = value;
+  }
+
+  function togglePlayback() {
+    if (!player.current) return;
+    if (player.current.paused) player.current.play().catch(() => setError("Video playback could not start"));
+    else player.current.pause();
+  }
+
+  function toggleFullscreen() {
+    if (document.fullscreenElement) document.exitFullscreen().catch(() => setError("Could not exit fullscreen"));
+    else playerShell.current?.requestFullscreen().catch(() => setError("Fullscreen is unavailable"));
   }
 
   async function upload(event: ChangeEvent<HTMLInputElement>) {
@@ -153,7 +175,12 @@ export default function Home() {
       <section className="review panel">
         {!video ? <div className="empty">{selectedId ? "Loading video…" : "Choose or upload a video"}</div> : <>
           <div className="section-head review-head"><div><span className="eyebrow">CURRENT REVIEW</span><h2 title={video.filename}>{video.filename}</h2></div><span className={`status ${video.status}`}>{video.status}</span></div>
-          <div className="player-wrap"><video key={video.id} ref={player} controls preload="metadata" src={`${BASE_PATH}/api/videos/${video.id}/file`} onTimeUpdate={(event) => setSecond(Math.min(video.duration_seconds - 1, Math.floor(event.currentTarget.currentTime)))} /></div>
+          <div className="player-shell" ref={playerShell}>
+            <div className="player-wrap"><video key={video.id} ref={player} playsInline muted={muted} preload="metadata" src={`${BASE_PATH}/api/videos/${video.id}/file`} onClick={togglePlayback} onPlay={() => setPlaying(true)} onPause={() => setPlaying(false)} onTimeUpdate={(event) => setSecond(Math.min(video.duration_seconds - 1, Math.floor(event.currentTarget.currentTime)))} /></div>
+            <div className="timeline-area"><div className="timeline-wrap"><input aria-label="Seek video" type="range" min={0} max={Math.max(0, video.duration_seconds - 1)} step={1} value={second} onChange={(event) => seek(Number(event.target.value))} />
+              <div className="timeline-markers">{video.comments.map((item) => item.second === null ? null : <button key={item.id} type="button" title={`${stamp(item.second)}: ${item.body}`} aria-label={`Jump to comment at ${stamp(item.second)}: ${item.body}`} className={`marker ${item.author}`} style={{ left: `${(item.second / Math.max(1, video.duration_seconds - 1)) * 100}%` }} onClick={() => seek(item.second!)} />)}</div>
+            </div><div className="player-controls"><button type="button" aria-label={playing ? "Pause video" : "Play video"} onClick={togglePlayback}>{playing ? "❚❚" : "▶"}</button><span>{stamp(second)} / {stamp(video.duration_seconds)}</span><div className="control-spacer" /><button type="button" onClick={() => setMuted((value) => !value)}>{muted ? "Unmute" : "Mute"}</button><button type="button" onClick={toggleFullscreen}>{fullscreen ? "Exit fullscreen" : "Fullscreen"}</button></div></div>
+          </div>
           <form className="comment-form" onSubmit={addComment}><label htmlFor="comment">Leave a comment</label><textarea id="comment" placeholder="What should the editor change?" value={comment} onChange={(event) => setComment(event.target.value)} maxLength={1000} /><label className="timestamp-option"><input type="checkbox" checked={timestamped} onChange={(event) => setTimestamped(event.target.checked)} /> Comment on current frame {timestamped && <strong>{stamp(second)}</strong>}</label><button disabled={!comment.trim()}>Add comment</button></form>
           <div className="comments"><div className="section-head"><h2>Comments</h2><span>{video.comments.length}</span></div>
             {video.comments.length === 0 && <p className="muted">No comments yet. Use the video timeline to choose a frame, or leave a general comment.</p>}
