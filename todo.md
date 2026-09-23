@@ -17,6 +17,7 @@ Status as of 2026-09-23. **Codex** owns implementation and technical checks; **B
 | Done | Codex | Improve visual/text inspection with high-resolution 2 FPS video and a shot-by-shot prompt; repeat blind checks on all three ads without same-ad reference comments. Record gains and remaining misses in `VERIFICATION.md`. |
 | Done | Codex | Match Gemini's chat and timeline-comment style to the strategist's brief, direct Replay notes; verify on all three sample ads and record the tone check in `VERIFICATION.md`. |
 | Done | Codex | Show one video timeline, add optional timestamps for manual comments, and add video removal with data and file cleanup; verify locally and deploy. |
+| Done | Codex | Restore comment markers on the single custom timeline, hide native video controls, add essential playback controls, verify and deploy. |
 | Needs doing | Baback | Review the remaining AI feedback limitations in `VERIFICATION.md` before submitting. |
 | Needs doing | Baback | Set a Gemini spending cap in Google AI Studio before sharing the live demo. |
 | Needs doing | Baback | Record the 15–20 minute Loom demo and prompt-design explanation. |

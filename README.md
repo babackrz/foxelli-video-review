@@ -1,6 +1,6 @@
 # Video Review Lab
 
-A one-page first-pass review tool for short video ads. Upload an MP4, use the video timeline to choose a frame, and leave a timed or general comment. You can also ask Gemini about the video, ask it to post timestamped comments, or remove a video and its review history. The strategist remains the editor of the final feedback.
+A one-page first-pass review tool for short video ads. Upload an MP4, use the custom timeline with comment markers to seek, and leave a timed or general comment. Play/pause, mute, and fullscreen controls sit below the video. You can also ask Gemini about the video, ask it to post timestamped comments, or remove a video and its review history. The strategist remains the editor of the final feedback.
 
 ## Run locally
 

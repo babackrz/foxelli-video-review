@@ -69,3 +69,9 @@ The three source videos and their reference comments are not included in the cod
 - The video list showed an inline Remove/Cancel confirmation. Cancel kept a temporary test clip. Remove deleted it; its API returned 404, its private MP4 was absent, and its video, comment, and chat rows were all absent. The three supplied ads remained in the local list.
 - The four backend tests and the Next.js production build passed. These checks used the local Docker app; the hosted revision is verified separately after deployment.
 - The `main` push deployed automatically on the server. Its four backend tests passed; the deploy unit finished successfully, API and worker are active, the `comments.second` column accepts null, internal API health returned 200, and the public page and API still require authentication (401 without credentials). A delete request for a nonexistent video returned 404.
+
+### Single custom timeline (2026-09-23)
+
+- The local production build passed. Browser inspection found one range slider and no native video controls.
+- Play/pause changed the player state; mute changed to Unmute; seeking changed both the displayed time and the comment timestamp. A temporary timed comment appeared as a timeline marker, and clicking it sought from 0:00 to 0:05. The comment was removed after the check.
+- Fullscreen and Exit fullscreen worked in the Codex app browser. The Chrome automation session denied fullscreen, while its other controls and marker interaction worked. Browser console warnings and errors were empty after reload.
