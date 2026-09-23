@@ -1,0 +1,14 @@
+node_modules/
+.next/
+out/
+__pycache__/
+.pytest_cache/
+.env
+.env.*
+!.env.example
+*.pyc
+*.zip
+samples/
+.local-videos/
+Todo.md
+AI Engineer - TEST TASK - FoxelliGroup.pdf
