@@ -12,16 +12,18 @@
 
 ## Completed on the test server
 
-- The native deployment is live at `https://5.22.217.149`: Nginx is public, while FastAPI, PostgreSQL, and Redis listen locally. FastAPI and the RQ worker run as the unprivileged `foxelli` user.
+- The native deployment is live at `https://5.22.217.149/foxelli-test/`: Nginx is public, while FastAPI, PostgreSQL, and Redis listen locally. FastAPI and the RQ worker run as the unprivileged `foxelli` user.
 - All three supplied ads uploaded through the public HTTPS endpoint and each live video route returned HTTP 206. PostgreSQL and local video files persisted after restarting both app services.
 - The VM has 1 vCPU, 842 MiB usable RAM, and 25 GB disk. With the three ads and all services running, it had 333 MiB RAM available, 18 GB disk free, and 34 MiB of its 2 GB swap in use. This is enough for the small test workload; increase RAM if concurrent uploads or reviews become routine.
 - A trusted IP certificate is installed. Its daily renewal timer is active and the production renewal command exits successfully when the certificate is not yet due. The staging dry-run endpoint was temporarily rate limited during verification.
-- All three full MP4s were accepted by Gemini. The public deployment completed all 12 chat checks (the four example prompts on each ad), saved 9 valid AI timeline comments, and has no pending or failed turns. The browser showed the saved comments and played an ad in Chrome without console warnings or errors. The in-app browser crashed when starting playback, so media was checked in Chrome and with an HTTP 206 range request.
+- All three full MP4s were accepted by Gemini. The hosted deployment completed all 12 chat checks (the four example prompts on each ad), saved 9 valid AI timeline comments, and has no pending or failed turns. The browser showed the saved comments and played an ad in Chrome without console warnings or errors. The in-app browser crashed when starting playback, so media was checked in Chrome and with an HTTP 206 range request.
+- The hosted page, static assets, API, and video file all returned HTTP 401 without credentials. The page also returned 401 with an incorrect password. With the supplied password, the page, assets, and API returned 200 and the video range request returned 206. Chrome loaded and played the protected app. The old `/api/videos` returned 404, while `/` redirected to the new path. The password hash is in `/etc/nginx/foxelli.htpasswd`, outside the repository.
 
 ## GitHub deployment
 
 - The repository is private. The VM has a read-only deploy key; the Gemini key is absent from tracked files and stays in the server environment file.
 - The initial GitHub revision `b899d52` built and passed the server checks. After pushing `88840c0` to `main`, the systemd timer deployed it without a manual trigger; `/opt/foxelli/deployed-revision` matched the new commit and the deploy unit finished successfully.
+- The path and authentication cutover at `31e8ccc` was also deployed by the timer, with the new URL's HTTP 401 included in the release health check.
 - The build fits this small VM with swap. The first server build peaked at about 522 MiB service memory and 825 MiB swap; afterward the VM had about 385 MiB RAM available and 17 GB disk free. No resource increase is needed for this test workload.
 
 ## Blind feedback comparison
