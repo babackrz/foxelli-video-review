@@ -6,6 +6,7 @@ type VideoSummary = { id: string; filename: string; duration_seconds: number; st
 type Comment = { id: string; second: number; author: "human" | "ai"; body: string };
 type Turn = { id: string; prompt: string; status: string; reply: string | null; error: string | null };
 type Video = VideoSummary & { error: string | null; comments: Comment[]; turns: Turn[] };
+const BASE_PATH = "/foxelli-test";
 
 function stamp(second: number) {
   return `${Math.floor(second / 60)}:${String(second % 60).padStart(2, "0")}`;
@@ -33,13 +34,13 @@ export default function Home() {
   const conversation = useRef<HTMLDivElement>(null);
 
   const refreshList = useCallback(async () => {
-    const list = await request<VideoSummary[]>("/api/videos");
+    const list = await request<VideoSummary[]>(`${BASE_PATH}/api/videos`);
     setVideos(list);
     setSelectedId((id) => id || list[0]?.id || null);
   }, []);
 
   const refreshVideo = useCallback(async (id: string) => {
-    const detail = await request<Video>(`/api/videos/${id}`);
+    const detail = await request<Video>(`${BASE_PATH}/api/videos/${id}`);
     setVideo(detail);
   }, []);
 
@@ -74,7 +75,7 @@ export default function Home() {
     try {
       const form = new FormData();
       form.append("file", file);
-      const result = await request<{ id: string }>("/api/videos", { method: "POST", body: form });
+      const result = await request<{ id: string }>(`${BASE_PATH}/api/videos`, { method: "POST", body: form });
       await refreshList();
       setSelectedId(result.id);
     } catch (err) { setError((err as Error).message); }
@@ -86,7 +87,7 @@ export default function Home() {
     if (!selectedId || !comment.trim()) return;
     setError("");
     try {
-      await request(`/api/videos/${selectedId}/comments`, {
+      await request(`${BASE_PATH}/api/videos/${selectedId}/comments`, {
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ second, body: comment.trim() }),
       });
@@ -100,7 +101,7 @@ export default function Home() {
     if (!selectedId || !prompt.trim()) return;
     setError("");
     try {
-      await request(`/api/videos/${selectedId}/chat`, {
+      await request(`${BASE_PATH}/api/videos/${selectedId}/chat`, {
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ prompt: prompt.trim() }),
       });
@@ -113,7 +114,7 @@ export default function Home() {
     if (!selectedId) return;
     setError("");
     try {
-      await request(`/api/videos/${selectedId}/retry`, { method: "POST" });
+      await request(`${BASE_PATH}/api/videos/${selectedId}/retry`, { method: "POST" });
       await refreshVideo(selectedId);
     } catch (err) { setError((err as Error).message); }
   }
@@ -135,7 +136,7 @@ export default function Home() {
       <section className="review panel">
         {!video ? <div className="empty">{selectedId ? "Loading video…" : "Choose or upload a video"}</div> : <>
           <div className="section-head review-head"><div><span className="eyebrow">CURRENT REVIEW</span><h2 title={video.filename}>{video.filename}</h2></div><span className={`status ${video.status}`}>{video.status}</span></div>
-          <div className="player-wrap"><video key={video.id} ref={player} controls preload="metadata" src={`/api/videos/${video.id}/file`} onTimeUpdate={(event) => setSecond(Math.min(video.duration_seconds - 1, Math.floor(event.currentTarget.currentTime)))} /></div>
+          <div className="player-wrap"><video key={video.id} ref={player} controls preload="metadata" src={`${BASE_PATH}/api/videos/${video.id}/file`} onTimeUpdate={(event) => setSecond(Math.min(video.duration_seconds - 1, Math.floor(event.currentTarget.currentTime)))} /></div>
           <div className="timeline-area"><div className="timeline-label"><strong>Timeline</strong><span>{stamp(second)} / {stamp(video.duration_seconds)}</span></div>
             <div className="timeline-wrap"><input aria-label="Choose comment time" type="range" min={0} max={Math.max(0, video.duration_seconds - 1)} step={1} value={second} onChange={(event) => seek(Number(event.target.value))} />
               {video.comments.map((item) => <button key={item.id} title={`${stamp(item.second)}: ${item.body}`} aria-label={`Jump to comment at ${stamp(item.second)}`} className={`marker ${item.author}`} style={{ left: `${(item.second / Math.max(1, video.duration_seconds - 1)) * 100}%` }} onClick={() => seek(item.second)} />)}

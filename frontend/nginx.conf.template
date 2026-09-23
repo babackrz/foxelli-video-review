@@ -7,7 +7,11 @@ server {
     resolver 127.0.0.11 valid=10s ipv6=off;
     set $api_upstream ${API_UPSTREAM};
 
-    location /api/ {
+    location = / { return 302 /foxelli-test/; }
+    location = /foxelli-test { return 301 /foxelli-test/; }
+
+    location ^~ /foxelli-test/api/ {
+        rewrite ^/foxelli-test(/api/.*)$ $1 break;
         proxy_pass $api_upstream;
         proxy_set_header Host $host;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
@@ -15,7 +19,14 @@ server {
         proxy_read_timeout 300s;
     }
 
-    location / {
-        try_files $uri $uri/ /index.html;
+    location = /foxelli-test/ {
+        try_files /index.html =404;
     }
+
+    location ^~ /foxelli-test/ {
+        rewrite ^/foxelli-test/(.*)$ /$1 break;
+        try_files $uri =404;
+    }
+
+    location / { return 404; }
 }
