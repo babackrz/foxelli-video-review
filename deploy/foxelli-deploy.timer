@@ -1,0 +1,11 @@
+[Unit]
+Description=Check Foxelli main for updates
+
+[Timer]
+OnBootSec=2min
+OnUnitActiveSec=1min
+Persistent=true
+Unit=foxelli-deploy.service
+
+[Install]
+WantedBy=timers.target

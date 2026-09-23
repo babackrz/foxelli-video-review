@@ -1,0 +1,9 @@
+[Unit]
+Description=Deploy Foxelli main from GitHub
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/foxelli-deploy
+TimeoutStartSec=20min

@@ -1,0 +1,19 @@
+[Unit]
+Description=Foxelli video review worker
+After=network.target postgresql.service redis-server.service
+Requires=postgresql.service redis-server.service
+
+[Service]
+User=foxelli
+Group=foxelli
+WorkingDirectory=/opt/foxelli/current/backend
+Environment=DATABASE_URL=postgresql:///foxelli?host=/var/run/postgresql
+Environment=REDIS_URL=redis://127.0.0.1:6379/0
+Environment=VIDEO_DIR=/var/lib/foxelli/videos
+EnvironmentFile=/etc/foxelli.env
+ExecStart=/opt/foxelli/venv/bin/rq worker foxelli --url redis://127.0.0.1:6379/0
+Restart=on-failure
+NoNewPrivileges=true
+
+[Install]
+WantedBy=multi-user.target
