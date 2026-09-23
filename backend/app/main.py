@@ -7,7 +7,7 @@ from pathlib import Path
 from uuid import UUID, uuid4
 
 from fastapi import FastAPI, File, HTTPException, UploadFile
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, Response
 from pydantic import BaseModel, Field
 from redis import Redis
 from rq import Queue
@@ -108,7 +108,7 @@ def get_video(video_id: UUID):
     with db.connect() as conn:
         video = video_or_404(conn, video_id)
         comments = conn.execute(
-            "SELECT id, second, author, body, created_at FROM comments WHERE video_id = %s ORDER BY second, created_at",
+            "SELECT id, second, author, body, created_at FROM comments WHERE video_id = %s ORDER BY second NULLS LAST, created_at",
             (video_id,),
         ).fetchall()
         turns = conn.execute(
@@ -124,6 +124,18 @@ def get_video(video_id: UUID):
         "comments": comments,
         "turns": turns,
     }
+
+
+@app.delete("/api/videos/{video_id}", status_code=204)
+def delete_video(video_id: UUID):
+    with db.connect() as conn:
+        video = video_or_404(conn, video_id)
+        conn.execute("DELETE FROM videos WHERE id = %s", (video_id,))
+    try:
+        storage.delete(video["object_key"])
+    except OSError:
+        log.exception("Could not remove stored video %s", video_id)
+    return Response(status_code=204)
 
 
 @app.get("/api/videos/{video_id}/file")
@@ -153,7 +165,7 @@ def retry_video(video_id: UUID):
 
 
 class CommentIn(BaseModel):
-    second: int
+    second: int | None = None
     body: str = Field(min_length=1, max_length=1000)
 
 
@@ -164,7 +176,7 @@ def add_comment(video_id: UUID, comment: CommentIn):
         raise HTTPException(400, "Comment cannot be blank")
     with db.connect() as conn:
         video = video_or_404(conn, video_id)
-        if not valid_second(comment.second, video["duration_seconds"]):
+        if comment.second is not None and not valid_second(comment.second, video["duration_seconds"]):
             raise HTTPException(400, "Timestamp is outside the video")
         return conn.execute(
             "INSERT INTO comments (id, video_id, second, author, body) VALUES (%s, %s, %s, 'human', %s) RETURNING id, second, author, body, created_at",

@@ -76,7 +76,10 @@ def prepare_video(video_id):
 
 
 def make_prompt(video, comments, history, current_prompt):
-    comment_context = [f"{row['second']:02d}s [{row['author']}]: {row['body']}" for row in comments]
+    comment_context = [
+        (f"{row['second']:02d}s" if row["second"] is not None else "General") + f" [{row['author']}]: {row['body']}"
+        for row in comments
+    ]
     chat_context = [f"User: {row['prompt']}\nAssistant: {row['reply']}" for row in history]
     may_post = post_requested(current_prompt)
     return f"""You are a creative strategist giving a first pass on a short paid video ad. Inspect the supplied video and audio from beginning to end before answering. Give concise production feedback an editor can act on.
@@ -116,8 +119,10 @@ def answer_chat(turn_id):
         if not turn or turn["status"] == "done":
             return
         video = conn.execute("SELECT * FROM videos WHERE id = %s", (turn["video_id"],)).fetchone()
+        if not video:
+            return
         comments = conn.execute(
-            "SELECT second, author, body FROM comments WHERE video_id = %s ORDER BY second, created_at",
+            "SELECT second, author, body FROM comments WHERE video_id = %s ORDER BY second NULLS LAST, created_at",
             (video["id"],),
         ).fetchall()
         history = conn.execute(

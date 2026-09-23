@@ -14,11 +14,13 @@ CREATE TABLE IF NOT EXISTS videos (
 CREATE TABLE IF NOT EXISTS comments (
   id uuid PRIMARY KEY,
   video_id uuid NOT NULL REFERENCES videos(id) ON DELETE CASCADE,
-  second integer NOT NULL CHECK (second >= 0),
+  second integer CHECK (second >= 0),
   author text NOT NULL CHECK (author IN ('human', 'ai')),
   body text NOT NULL CHECK (length(body) BETWEEN 1 AND 1000),
   created_at timestamptz NOT NULL DEFAULT now()
 );
+
+ALTER TABLE comments ALTER COLUMN second DROP NOT NULL;
 
 CREATE INDEX IF NOT EXISTS comments_video_time ON comments(video_id, second, created_at);
 
