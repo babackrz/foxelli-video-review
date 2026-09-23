@@ -14,7 +14,8 @@ Status as of 2026-09-23. **Codex** owns implementation and technical checks; **B
 | Done | Codex | Run blind first-pass comparisons against each ad's strategist comments and document the quality gaps in `VERIFICATION.md`. |
 | Done | Codex | Publish the app on the existing server with HTTPS at `https://5.22.217.149/foxelli-test/` and password-protect the page, assets, API, and video. |
 | Done | Codex | Create the private GitHub repository, make semantic commits, prepare the source ZIP, and set up automatic deployment from `main` with health checks and rollback. |
-| Needs doing | Codex | Improve first-pass feedback on missed visual, logo, text, and image-quality issues; repeat the blind three-ad comparison without giving Gemini that ad's reference comments. Current feedback is useful but does not yet match strategist depth. |
+| Done | Codex | Improve visual/text inspection with high-resolution 2 FPS video and a shot-by-shot prompt; repeat blind checks on all three ads without same-ad reference comments. Record gains and remaining misses in `VERIFICATION.md`. |
+| Needs doing | Baback | Review the remaining AI feedback limitations in `VERIFICATION.md` before submitting. |
 | Needs doing | Baback | Set a Gemini spending cap in Google AI Studio before sharing the live demo. |
 | Needs doing | Baback | Record the 15–20 minute Loom demo and prompt-design explanation. |
 | Needs doing | Baback | Share the private repo or source ZIP, live URL and password, and Loom with Foxelli before the agreed deadline. |

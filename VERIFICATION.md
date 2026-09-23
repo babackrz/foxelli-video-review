@@ -38,6 +38,18 @@ After the live checks, the prompt was adjusted to rank concrete production defec
 
 The tool works end to end, but this sample does **not** support claiming strategist-level feedback quality. A higher Gemini thinking setting on 26W04 did not materially improve overlap, so the deployed setting remains low. The strategist should review AI notes before treating them as edit instructions. Exact logo correctness also needs a brand reference.
 
+### Visual-detail refinement (2026-09-23)
+
+The review prompt now explicitly checks each shot for plausible people and products, text and logos, image quality, and natural delivery before ranking issues. The full video is sampled at 2 FPS with high media resolution. Fresh blind calls used each hosted Gemini video file with **no comments or previous chat**; Replay comments were used only for external comparison and never sent to Gemini. These calls did not change the saved demo data.
+
+| Ad | New first-pass top-three output | Comparison with strategist |
+| --- | --- | --- |
+| 26W04 | Flagged distorted monitor text at 0:05 and uncanny expression around 0:21; also raised kit continuity. | Better overlap on AI-looking text and person. Still missed the yarn/environment and unclear explanation notes. |
+| 26W07 | Flagged an uncanny opening face at 0:01–0:02; also raised voice and end-card text. | Opening concern matched. Missed the fabric-store clarity, fabric variety, and final kitty-bag concern. |
+| 26W10 | Raised the unboxing prop, map graphic, and small booklet-text legibility near 0:17. | Did not recover the strategist's robotic voice, pale/soft-frame, or brand-logo notes. Exact logo identity is unverifiable without a brand reference. |
+
+A separate blind “post five comments” check returned valid seconds on all three clips and found additional text defects on 26W04 and 26W10. Responses varied between runs, and some specific visual claims were questionable on inspection. The improvement is in visual/text coverage, not reliable agreement with every strategist note. Human review remains necessary.
+
 ## User-owned delivery item
 
 - The user will record the 15–20 minute Loom. The timed outline in `README.md` is ready.
