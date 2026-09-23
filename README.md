@@ -1,6 +1,6 @@
 # Video Review Lab
 
-A one-page first-pass review tool for short video ads. Upload an MP4, click the timeline to add a comment, ask Gemini about the video, or ask it to post timestamped comments. The strategist remains the editor of the final feedback.
+A one-page first-pass review tool for short video ads. Upload an MP4, use the video timeline to choose a frame, and leave a timed or general comment. You can also ask Gemini about the video, ask it to post timestamped comments, or remove a video and its review history. The strategist remains the editor of the final feedback.
 
 ## Run locally
 
@@ -16,7 +16,7 @@ Next.js builds the static single page, served by Nginx. FastAPI validates MP4 fi
 
 The prompt asks for short, direct notes inspired by the supplied strategist feedback: one concrete issue per line, without headings, long explanations, or forced fixes. It does not include the reference comments from the ad being evaluated. Gemini receives the full video at high [media resolution](https://ai.google.dev/gemini-api/docs/media-resolution) with [2 FPS static sampling](https://ai.google.dev/gemini-api/docs/video-understanding) to inspect small text and quick cuts. This uses more input tokens than the default 1 FPS review. Gemini uses low thinking with a three-minute request timeout, and interaction storage is disabled because the app sends its own chat context. Gemini can return structured timeline comments only for an explicit posting request; the server checks their seconds, length, count, and duplicates before saving. The API key stays on the backend. See `VERIFICATION.md` for the blind comparison and the quality gaps it found.
 
-Public API routes live under `/foxelli-test/api/`: `GET /videos`, `POST /videos` (multipart `file`), `GET /videos/{id}`, `GET /videos/{id}/file`, `POST /videos/{id}/comments` (`second`, `body`), `POST /videos/{id}/chat` (`prompt`), and `POST /videos/{id}/retry`. Nginx removes `/foxelli-test` before forwarding to FastAPI. The UI polls video and chat status.
+Public API routes live under `/foxelli-test/api/`: `GET /videos`, `POST /videos` (multipart `file`), `GET /videos/{id}`, `DELETE /videos/{id}`, `GET /videos/{id}/file`, `POST /videos/{id}/comments` (`body`, optional `second`), `POST /videos/{id}/chat` (`prompt`), and `POST /videos/{id}/retry`. Deleting a video removes its saved comments, chat, and private MP4. Nginx removes `/foxelli-test` before forwarding to FastAPI. The UI polls video and chat status.
 
 ## Checks
 
@@ -41,7 +41,7 @@ The bare-IP HTTPS certificate renews through the daily Certbot timer. Nginx keep
 ## Loom outline (15–20 minutes)
 
 1. Show the supplied brief and the three reference ads (2 minutes).
-2. Upload an ad; add a manual comment by clicking the timeline; ask about the hook and a specific second; ask Gemini to post comments (7 minutes).
+2. Upload an ad; add a timed comment using the video timeline and a general comment by clearing the checkbox; ask about the hook and a specific second; ask Gemini to post comments (7 minutes).
 3. Explain why the prompt demands visible or audible evidence, avoids duplicate notes, and withholds that ad's reference comments during evaluation (5 minutes).
 4. Show the Gemini File API call, timestamp validation, data flow, and live hosted URL (4 minutes).
 

@@ -3,7 +3,7 @@
 ## Completed locally
 
 - Production Docker build of the Next.js/Nginx page and FastAPI/worker services succeeded.
-- The two backend tests pass; `docker compose config --quiet` and the API health check pass.
+- The backend tests pass; `docker compose config --quiet` and the API health check pass.
 - All three supplied MP4s uploaded, appeared in the page, played through the private video route, and returned HTTP 206 for range requests. Their rounded durations are 27, 31, and 20 seconds.
 - Each ad accepted a manual comment at second 5. All three comments remained after restarting the API and web containers.
 - The temporary test comments and two synthetic test clips were removed afterward, leaving the three supplied ads ready for a blind first pass.
@@ -61,3 +61,10 @@ In one blind run per ad, “top three issues” returned three plain timestamped
 - The user will record the 15–20 minute Loom. The timed outline in `README.md` is ready.
 
 The three source videos and their reference comments are not included in the code package. They are available through the supplied Dropbox Replay folder. During evaluation, ask Gemini for its first pass **before** entering that video's strategist comments into the tool.
+
+## Review controls (2026-09-23)
+
+- The local browser showed one video seek timeline. Scrubbing it updated the current-frame time in the comment form.
+- A timed comment and a general comment both saved and remained after reload. The timed comment jumped to its second; the general comment was labeled “General.”
+- The video list showed an inline Remove/Cancel confirmation. Cancel kept a temporary test clip. Remove deleted it; its API returned 404, its private MP4 was absent, and its video, comment, and chat rows were all absent. The three supplied ads remained in the local list.
+- The four backend tests and the Next.js production build passed. These checks used the local Docker app; the hosted revision is verified separately after deployment.
