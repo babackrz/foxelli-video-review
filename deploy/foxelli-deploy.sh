@@ -44,8 +44,9 @@ activate() {
 
 healthy() {
     for _ in $(seq 1 20); do
-        if curl -fsS --max-time 2 http://127.0.0.1:8000/api/health | grep -q '"ok":true' &&
-           curl -fsS --max-time 3 --resolve 5.22.217.149:443:127.0.0.1 https://5.22.217.149/ | grep -q 'Video Review Lab'; then
+        if curl -fsS --max-time 2 http://127.0.0.1:8000/api/health 2>/dev/null | grep -q '"ok":true' &&
+           curl -fsS --max-time 2 http://127.0.0.1:8000/api/videos >/dev/null 2>&1 &&
+           curl -fsS --max-time 3 --resolve 5.22.217.149:443:127.0.0.1 https://5.22.217.149/ 2>/dev/null | grep -q 'Video Review Lab'; then
             return 0
         fi
         sleep 1
