@@ -3,7 +3,7 @@
 import { ChangeEvent, FormEvent, useCallback, useEffect, useRef, useState } from "react";
 
 type VideoSummary = { id: string; filename: string; duration_seconds: number; status: string };
-type Comment = { id: string; second: number; author: "human" | "ai"; body: string };
+type Comment = { id: string; second: number | null; author: "human" | "ai"; body: string };
 type Turn = { id: string; prompt: string; status: string; reply: string | null; error: string | null };
 type Video = VideoSummary & { error: string | null; comments: Comment[]; turns: Turn[] };
 const BASE_PATH = "/foxelli-test";
@@ -18,6 +18,7 @@ async function request<T>(url: string, options?: RequestInit): Promise<T> {
     const body = await response.json().catch(() => ({}));
     throw new Error(body.detail || `Request failed (${response.status})`);
   }
+  if (response.status === 204) return undefined as T;
   return response.json();
 }
 
@@ -26,9 +27,12 @@ export default function Home() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [video, setVideo] = useState<Video | null>(null);
   const [second, setSecond] = useState(0);
+  const [timestamped, setTimestamped] = useState(true);
   const [comment, setComment] = useState("");
   const [prompt, setPrompt] = useState("");
   const [busy, setBusy] = useState(false);
+  const [removingId, setRemovingId] = useState<string | null>(null);
+  const [confirmRemoveId, setConfirmRemoveId] = useState<string | null>(null);
   const [error, setError] = useState("");
   const player = useRef<HTMLVideoElement>(null);
   const conversation = useRef<HTMLDivElement>(null);
@@ -36,7 +40,7 @@ export default function Home() {
   const refreshList = useCallback(async () => {
     const list = await request<VideoSummary[]>(`${BASE_PATH}/api/videos`);
     setVideos(list);
-    setSelectedId((id) => id || list[0]?.id || null);
+    setSelectedId((id) => list.some((item) => item.id === id) ? id : list[0]?.id || null);
   }, []);
 
   const refreshVideo = useCallback(async (id: string) => {
@@ -49,7 +53,7 @@ export default function Home() {
   }, [refreshList]);
 
   useEffect(() => {
-    if (!selectedId) return;
+    if (!selectedId) { setVideo(null); return; }
     setVideo(null);
     setSecond(0);
     refreshVideo(selectedId).catch((err) => setError(err.message));
@@ -82,6 +86,17 @@ export default function Home() {
     finally { setBusy(false); event.target.value = ""; }
   }
 
+  async function removeVideo(item: VideoSummary) {
+    setError("");
+    setRemovingId(item.id);
+    try {
+      await request<void>(`${BASE_PATH}/api/videos/${item.id}`, { method: "DELETE" });
+      setConfirmRemoveId(null);
+      await refreshList();
+    } catch (err) { setError((err as Error).message); }
+    finally { setRemovingId(null); }
+  }
+
   async function addComment(event: FormEvent) {
     event.preventDefault();
     if (!selectedId || !comment.trim()) return;
@@ -89,7 +104,7 @@ export default function Home() {
     try {
       await request(`${BASE_PATH}/api/videos/${selectedId}/comments`, {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ second, body: comment.trim() }),
+        body: JSON.stringify({ second: timestamped ? second : null, body: comment.trim() }),
       });
       setComment("");
       await refreshVideo(selectedId);
@@ -129,23 +144,20 @@ export default function Home() {
       <aside className="library panel">
         <div className="section-head"><h2>Videos</h2><span>{videos.length}</span></div>
         {videos.length === 0 && <p className="muted">Upload an MP4 to start a review.</p>}
-        {videos.map((item) => <button key={item.id} className={`video-item ${selectedId === item.id ? "active" : ""}`} onClick={() => setSelectedId(item.id)}>
+        {videos.map((item) => <div key={item.id}><div className="video-item-row"><button className={`video-item ${selectedId === item.id ? "active" : ""}`} onClick={() => { setSelectedId(item.id); setConfirmRemoveId(null); }}>
           <span className="video-icon">▶</span><span className="video-item-text"><strong title={item.filename}>{item.filename}</strong><small>{stamp(item.duration_seconds)} · {item.status}</small></span>
-        </button>)}
+        </button><button className="video-remove" type="button" title={`Remove ${item.filename}`} aria-label={`Remove ${item.filename}`} disabled={removingId === item.id} onClick={() => setConfirmRemoveId(item.id)}>×</button></div>
+          {confirmRemoveId === item.id && <div className="remove-confirm"><span>Remove video, comments and chat?</span><div><button type="button" disabled={removingId === item.id} onClick={() => removeVideo(item)}>{removingId === item.id ? "Removing…" : "Remove"}</button><button type="button" onClick={() => setConfirmRemoveId(null)}>Cancel</button></div></div>}
+        </div>)}
       </aside>
       <section className="review panel">
         {!video ? <div className="empty">{selectedId ? "Loading video…" : "Choose or upload a video"}</div> : <>
           <div className="section-head review-head"><div><span className="eyebrow">CURRENT REVIEW</span><h2 title={video.filename}>{video.filename}</h2></div><span className={`status ${video.status}`}>{video.status}</span></div>
           <div className="player-wrap"><video key={video.id} ref={player} controls preload="metadata" src={`${BASE_PATH}/api/videos/${video.id}/file`} onTimeUpdate={(event) => setSecond(Math.min(video.duration_seconds - 1, Math.floor(event.currentTarget.currentTime)))} /></div>
-          <div className="timeline-area"><div className="timeline-label"><strong>Timeline</strong><span>{stamp(second)} / {stamp(video.duration_seconds)}</span></div>
-            <div className="timeline-wrap"><input aria-label="Choose comment time" type="range" min={0} max={Math.max(0, video.duration_seconds - 1)} step={1} value={second} onChange={(event) => seek(Number(event.target.value))} />
-              {video.comments.map((item) => <button key={item.id} title={`${stamp(item.second)}: ${item.body}`} aria-label={`Jump to comment at ${stamp(item.second)}`} className={`marker ${item.author}`} style={{ left: `${(item.second / Math.max(1, video.duration_seconds - 1)) * 100}%` }} onClick={() => seek(item.second)} />)}
-            </div>
-          </div>
-          <form className="comment-form" onSubmit={addComment}><label htmlFor="comment">Leave a comment at <strong>{stamp(second)}</strong></label><textarea id="comment" placeholder="What should the editor change here?" value={comment} onChange={(event) => setComment(event.target.value)} maxLength={1000} /><button disabled={!comment.trim()}>Add comment</button></form>
-          <div className="comments"><div className="section-head"><h2>Timeline comments</h2><span>{video.comments.length}</span></div>
-            {video.comments.length === 0 && <p className="muted">No comments yet. Click the timeline to pick a second.</p>}
-            {video.comments.map((item) => <button key={item.id} className="comment-card" onClick={() => seek(item.second)}><span className="time">{stamp(item.second)}</span><span><small>{item.author === "ai" ? "Gemini" : "You"}</small><p>{item.body}</p></span></button>)}
+          <form className="comment-form" onSubmit={addComment}><label htmlFor="comment">Leave a comment</label><textarea id="comment" placeholder="What should the editor change?" value={comment} onChange={(event) => setComment(event.target.value)} maxLength={1000} /><label className="timestamp-option"><input type="checkbox" checked={timestamped} onChange={(event) => setTimestamped(event.target.checked)} /> Comment on current frame {timestamped && <strong>{stamp(second)}</strong>}</label><button disabled={!comment.trim()}>Add comment</button></form>
+          <div className="comments"><div className="section-head"><h2>Comments</h2><span>{video.comments.length}</span></div>
+            {video.comments.length === 0 && <p className="muted">No comments yet. Use the video timeline to choose a frame, or leave a general comment.</p>}
+            {video.comments.map((item) => <div key={item.id} className="comment-card">{item.second === null ? <span className="time">General</span> : <button type="button" className="time" aria-label={`Jump to comment at ${stamp(item.second)}`} onClick={() => seek(item.second!)}>{stamp(item.second)}</button>}<span><small>{item.author === "ai" ? "Gemini" : "You"}</small><p>{item.body}</p></span></div>)}
           </div>
         </>}
       </section>
