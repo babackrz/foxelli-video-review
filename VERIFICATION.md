@@ -18,6 +18,12 @@
 - A trusted IP certificate is installed. Its daily renewal timer is active and the production renewal command exits successfully when the certificate is not yet due. The staging dry-run endpoint was temporarily rate limited during verification.
 - All three full MP4s were accepted by Gemini. The public deployment completed all 12 chat checks (the four example prompts on each ad), saved 9 valid AI timeline comments, and has no pending or failed turns. The browser showed the saved comments and played an ad in Chrome without console warnings or errors. The in-app browser crashed when starting playback, so media was checked in Chrome and with an HTTP 206 range request.
 
+## GitHub deployment
+
+- The repository is private. The VM has a read-only deploy key; the Gemini key is absent from tracked files and stays in the server environment file.
+- The initial GitHub revision `b899d52` built and passed the server checks. After pushing `88840c0` to `main`, the systemd timer deployed it without a manual trigger; `/opt/foxelli/deployed-revision` matched the new commit and the deploy unit finished successfully.
+- The build fits this small VM with swap. The first server build peaked at about 522 MiB service memory and 825 MiB swap; afterward the VM had about 385 MiB RAM available and 17 GB disk free. No resource increase is needed for this test workload.
+
 ## Blind feedback comparison
 
 After the live checks, the prompt was adjusted to rank concrete production defects ahead of general hook and CTA advice. A fresh first-pass probe for each ad used the full Gemini video file with **no comments or chat history**. These probes did not alter the saved demo conversations. The reference comments were compared only afterward.
